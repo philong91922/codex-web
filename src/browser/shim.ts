@@ -10,6 +10,8 @@ import {
   openSelectWorkspaceRootDialog,
   type WorkspaceDirectoryEntries,
 } from "./workspace-root-dialog";
+import { installModelSettings } from "./model-settings";
+import { installSkillsMenuCustomization } from "./skills-menu";
 
 type IpcListener = (event: unknown, ...args: unknown[]) => void;
 
@@ -398,6 +400,9 @@ if (initialRoute.browserPath) {
 electronShim.initialSidebarState = initialSidebarState;
 electronShim.onMemoryNavigationChanged = (navigation) => {
   const path = navigation.location.pathname;
+  window.dispatchEvent(
+    new CustomEvent("codex-web-route-change", { detail: { path } }),
+  );
   if (
     navigation.action !== "POP" &&
     mobileMediaQuery.matches &&
@@ -568,6 +573,8 @@ export const ipcRenderer = {
 };
 
 ensureSocket();
+installModelSettings();
+installSkillsMenuCustomization();
 
 export const contextBridge = {
   exposeInMainWorld(_key: string, _api: unknown): void {

@@ -23,6 +23,16 @@ type ServerOptions = {
   port: number;
 };
 
+type CodexConfiguration = {
+  baseUrl: string | null;
+  configPath: string;
+  model: string | null;
+  provider: string | null;
+  requiresOpenaiAuth: boolean | null;
+  token: string | null;
+  wireApi: string | null;
+};
+
 type RendererToMainMessage =
   | {
       type: "ipc-renderer-invoke";
@@ -307,6 +317,142 @@ function errorMessage(error: unknown): string {
   return String(error);
 }
 
+function getCodexConfigPath(): string {
+  const codexHome = process.env.CODEX_HOME?.trim() || path.join(os.homedir(), ".codex");
+  return path.join(codexHome, "config.toml");
+}
+
+function readTomlString(contents: string, key: string): string | null {
+  const match = contents.match(
+    new RegExp(`^\\s*${key}\\s*=\\s*"((?:[^"\\\\]|\\\\.)*)"\\s*(?:#.*)?$`, "m"),
+  );
+  if (!match) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(`"${match[1]}"`) as string;
+  } catch {
+    return null;
+  }
+}
+
+function readTomlBoolean(contents: string, key: string): boolean | null {
+  const match = contents.match(
+    new RegExp(`^\\s*${key}\\s*=\\s*(true|false)\\s*(?:#.*)?$`, "m"),
+  );
+  return match ? match[1] === "true" : null;
+}
+
+function getProviderSection(contents: string, provider: string): string {
+  const escapedProvider = provider.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = contents.match(
+    new RegExp(
+      `^\\[model_providers\\.${escapedProvider}\\]\\s*$([\\s\\S]*?)(?=^\\[|(?![\\s\\S]))`,
+      "m",
+    ),
+  );
+  return match?.[1] ?? "";
+}
+
+function validProviderId(provider: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(provider);
+}
+
+async function readCodexConfiguration(): Promise<CodexConfiguration> {
+  const configPath = getCodexConfigPath();
+  try {
+    const contents = await fs.readFile(configPath, "utf8");
+    const provider = readTomlString(contents, "model_provider");
+    const section = provider ? getProviderSection(contents, provider) : "";
+    return {
+      baseUrl: readTomlString(section, "base_url"),
+      configPath,
+      model: readTomlString(contents, "model"),
+      provider,
+      requiresOpenaiAuth: readTomlBoolean(section, "requires_openai_auth"),
+      token: null,
+      wireApi: readTomlString(section, "wire_api"),
+    };
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return {
+        baseUrl: null,
+        configPath,
+        model: null,
+        provider: null,
+        requiresOpenaiAuth: null,
+        token: null,
+        wireApi: null,
+      };
+    }
+    throw error;
+  }
+}
+
+function writeTomlValue(contents: string, key: string, value: string | boolean): string {
+  const line = `${key} = ${typeof value === "string" ? JSON.stringify(value) : value}`;
+  const pattern = new RegExp(`^\\s*${key}\\s*=.*$`, "m");
+  return pattern.test(contents) ? contents.replace(pattern, line) : `${line}\n${contents}`;
+}
+
+function writeProviderValue(
+  contents: string,
+  provider: string,
+  key: string,
+  value: string | boolean,
+): string {
+  const sectionHeader = `[model_providers.${provider}]`;
+  const section = getProviderSection(contents, provider);
+  const updatedSection = writeTomlValue(section, key, value);
+  if (section) {
+    return contents.replace(`${sectionHeader}${section}`, `${sectionHeader}\n${updatedSection}`);
+  }
+  return `${contents.trimEnd()}\n\n${sectionHeader}\n${updatedSection}`;
+}
+
+async function writeCodexConfiguration(
+  configuration: CodexConfiguration,
+): Promise<CodexConfiguration> {
+  const model = configuration.model?.trim() ?? "";
+  const provider = configuration.provider?.trim() ?? "";
+  if (!model || !provider || !validProviderId(provider)) {
+    throw new Error("A model and a valid provider ID are required.");
+  }
+  if (!configuration.baseUrl?.trim() || !configuration.wireApi?.trim()) {
+    throw new Error("Base URL and wire API are required.");
+  }
+
+  const configPath = getCodexConfigPath();
+  let contents = "";
+  let mode = 0o600;
+  try {
+    const stats = await fs.stat(configPath);
+    mode = stats.mode;
+    contents = await fs.readFile(configPath, "utf8");
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+
+  let updatedContents = writeTomlValue(contents, "model", model);
+  updatedContents = writeTomlValue(updatedContents, "model_provider", provider);
+  updatedContents = writeProviderValue(updatedContents, provider, "name", provider);
+  updatedContents = writeProviderValue(updatedContents, provider, "base_url", configuration.baseUrl.trim());
+  updatedContents = writeProviderValue(updatedContents, provider, "wire_api", configuration.wireApi.trim());
+  updatedContents = writeProviderValue(updatedContents, provider, "requires_openai_auth", configuration.requiresOpenaiAuth ?? false);
+  if (configuration.token?.trim()) {
+    updatedContents = writeProviderValue(updatedContents, provider, "experimental_bearer_token", configuration.token.trim());
+  }
+  await fs.mkdir(path.dirname(configPath), { recursive: true });
+  const temporaryPath = `${configPath}.${randomUUID()}.tmp`;
+  await fs.writeFile(temporaryPath, updatedContents, { encoding: "utf8", mode });
+  await fs.rename(temporaryPath, configPath);
+
+  return readCodexConfiguration();
+}
+
 async function getWorkspaceDirectoryEntries({
   directoryPath,
   directoriesOnly,
@@ -383,6 +529,22 @@ async function startIpcBridgeServer(options: ServerOptions): Promise<void> {
     limits: {
       fileSize: Infinity,
     },
+  });
+
+  app.get("/__backend/config/codex", async (_request, reply) => {
+    return reply.send(await readCodexConfiguration());
+  });
+
+  app.put("/__backend/config/codex", async (request, reply) => {
+    const body = request.body as Partial<CodexConfiguration> | undefined;
+    if (!body || typeof body !== "object") {
+      return reply.code(400).send({ error: "Configuration is required." });
+    }
+    try {
+      return reply.send(await writeCodexConfiguration(body as CodexConfiguration));
+    } catch (error) {
+      return reply.code(400).send({ error: errorMessage(error) });
+    }
   });
 
   const uploadRoot = await fs.mkdtemp(

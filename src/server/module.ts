@@ -18,8 +18,8 @@ export function installModuleAliasHook(): void {
   ): unknown {
     if (request === "electron") {
       return originalLoad.call(this, path.resolve(
-        path.resolve(__dirname, "../.."),
-        "src/server/electron/index.js",
+        __dirname,
+        "electron/index.js",
       ), parent, isMain);
     }
 
