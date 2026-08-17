@@ -112,7 +112,7 @@ export function installModelSettings(): void {
     const cardHeading = element("div", "codex-web-config-heading");
     const titleContainer = element("div");
     const heading = element("h2");
-    heading.textContent = "Codex Web provider";
+    heading.textContent = "Codex model provider";
     const description = element("p");
     description.textContent = "These settings are saved locally in your Codex configuration. Restart the server after saving to apply the updated provider and model.";
     titleContainer.append(heading, description);
