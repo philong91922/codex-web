@@ -25,7 +25,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: CODEX_WEB_PREPARE_FROM_DESKTOP=1 npm ci
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: CODEX_WEB_PREPARE_FROM_DESKTOP=1 bash scripts/prepare
       - run: tar -czf codex-web-ui.tar.gz scratch/asar
       - env:
           GH_TOKEN: ${{ github.token }}
