@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -Eeuo pipefail
 
-TEMP_DIR="$(mktemp -d)"
+if [[ "${CODEX_WEB_PREPARE_FROM_DESKTOP:-}" != "1" ]]; then
+  exec bash scripts/fetch_prebuilt_ui.sh
+fi
+
+[[ "$(uname -s)" == "Darwin" ]] || {
+  printf 'Publishing the UI asset requires a macOS runner.\n' >&2
+  exit 1
+}
 
 APP_VERSION="26.707.30751"
-curl -o "$TEMP_DIR/file.zip" "https://persistent.oaistatic.com/codex-app-prod/ChatGPT-darwin-arm64-$APP_VERSION.zip"
+APP_ARCHIVE_URL="https://persistent.oaistatic.com/codex-app-prod/ChatGPT-darwin-arm64-$APP_VERSION.zip"
+temporary_directory="$(mktemp -d)"
+trap 'rm -rf "$temporary_directory"' EXIT
 
-HOSTED_CODEX_APP_ZIP="$TEMP_DIR/file.zip" bash ./scripts/prepare_asar
-
-rm -rf "$TEMP_DIR"
+curl --fail --location --retry 3 --output "$temporary_directory/codex-desktop.zip" "$APP_ARCHIVE_URL"
+HOSTED_CODEX_APP_ZIP="$temporary_directory/codex-desktop.zip" bash scripts/prepare_asar

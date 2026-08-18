@@ -45,7 +45,9 @@ then open <http://127.0.0.1:8214> in a browser.
 [`scripts/bootstrap.sh`](./scripts/bootstrap.sh) clones this repository, installs
 Node.js 22+ and the Codex CLI, installs dependencies, builds the web client, signs
 in, and starts the server. On Windows, run it from **Git Bash** (not PowerShell or
-cmd.exe).
+cmd.exe). It downloads a prebuilt browser UI asset from this repository's GitHub
+Release, so neither Windows nor macOS needs Codex Desktop or downloads the macOS
+app during installation.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/philong91922/codex-web/main/scripts/bootstrap.sh | bash

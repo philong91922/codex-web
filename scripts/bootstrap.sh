@@ -127,10 +127,15 @@ log "Installing Codex CLI locally"
 npm install --prefix "$TOOLS_DIR" --no-audit --no-fund --no-save @openai/codex@latest
 CODEX_CLI_PATH="$(command -v codex)"
 
-log "Installing dependencies and building codex-web"
-# `npm ci` runs the project's prepare lifecycle, which downloads the matching
-# Codex desktop assets and builds both the browser and server bundles.
-npm ci --no-audit --no-fund
+log "Installing project dependencies"
+npm ci --ignore-scripts --no-audit --no-fund
+
+log "Downloading the prebuilt browser UI"
+bash scripts/fetch_prebuilt_ui.sh
+
+log "Building codex-web"
+npm run build:browser
+npm run build:server
 
 chmod +x scripts/run.sh
 
