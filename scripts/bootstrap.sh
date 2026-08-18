@@ -36,6 +36,25 @@ log() { printf '\n==> %s\n' "$*"; }
 die() { printf '\nError: %s\n' "$*" >&2; exit 1; }
 has_command() { command -v "$1" >/dev/null 2>&1; }
 
+create_windows_shortcut() {
+  local git_bash_path
+  git_bash_path="$(cygpath -w "$(command -v bash)")"
+
+  log "Creating Windows Desktop shortcut"
+  CODEX_WEB_SHORTCUT_TARGET="$git_bash_path" \
+    CODEX_WEB_SHORTCUT_ARGUMENTS='-lc "./scripts/run.sh"' \
+    CODEX_WEB_SHORTCUT_WORKDIR="$(cygpath -w "$INSTALL_DIR")" \
+    powershell.exe -NoProfile -NonInteractive -Command '
+      $desktop = [Environment]::GetFolderPath("Desktop")
+      $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $desktop "Codex Web.lnk"))
+      $shortcut.TargetPath = $env:CODEX_WEB_SHORTCUT_TARGET
+      $shortcut.Arguments = $env:CODEX_WEB_SHORTCUT_ARGUMENTS
+      $shortcut.WorkingDirectory = $env:CODEX_WEB_SHORTCUT_WORKDIR
+      $shortcut.IconLocation = $env:CODEX_WEB_SHORTCUT_TARGET
+      $shortcut.Save()
+    '
+}
+
 OS="$(uname -s)"
 case "$OS" in
   Darwin) PLATFORM="macos" ;;
@@ -113,11 +132,16 @@ log "Installing dependencies and building codex-web"
 # Codex desktop assets and builds both the browser and server bundles.
 npm ci --no-audit --no-fund
 
+chmod +x scripts/run.sh
+
+if [[ "$PLATFORM" == "windows" ]]; then
+  create_windows_shortcut
+fi
+
 if [[ "$SKIP_LOGIN" != true ]]; then
   log "Signing in to Codex"
   "$CODEX_CLI_PATH" login --device-auth
 fi
 
 log "Starting codex-web at http://127.0.0.1:$PORT"
-export CODEX_CLI_PATH
-exec npm run server -- --host 127.0.0.1 --port "$PORT"
+exec bash scripts/run.sh --host 127.0.0.1 --port "$PORT"
