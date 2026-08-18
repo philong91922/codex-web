@@ -40,6 +40,27 @@ nix run github:0xcaff/codex-web
 
 then open <http://127.0.0.1:8214> in a browser.
 
+### install from source (macOS / Windows)
+
+[`scripts/bootstrap.sh`](./scripts/bootstrap.sh) clones this repository, installs
+Node.js 22+ and the Codex CLI, installs dependencies, builds the web client, signs
+in, and starts the server. On Windows, run it from **Git Bash** (not PowerShell or
+cmd.exe).
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/philong91922/codex-web/main/scripts/bootstrap.sh | bash
+```
+
+The default install location is `~/codex-web`. To use a different location or
+skip the interactive login step:
+
+```bash
+bash scripts/bootstrap.sh --dir ~/apps/codex-web --port 8214 --no-login
+```
+
+The script starts the server in the foreground. Stop it with `Ctrl+C` and start
+it again later with `cd ~/codex-web && npm run server`.
+
 ### sign in
 
 ensure the codex cli on the host machine is signed in before starting the
