@@ -16,6 +16,7 @@ fi
   exit 1
 }
 
+rm -rf scratch/asar
 asar extract "$app_asar" "scratch/asar"
 cp assets/* scratch/asar/webview/
 PWA_SOURCE_ICON="scratch/asar/webview/assets/app-D0g8sCle.png"

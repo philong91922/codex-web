@@ -9,11 +9,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-rm -rf scratch/asar
-curl --fail --location --retry 3 --output "$temporary_archive" "$UI_ARCHIVE_URL"
-tar -xzf "$temporary_archive"
+if ! curl --fail --location --retry 3 --output "$temporary_archive" "$UI_ARCHIVE_URL"; then
+  printf 'The prebuilt UI archive is unavailable; building it from the Codex Desktop archive instead.\n' >&2
+  CODEX_WEB_PREPARE_FROM_DESKTOP=1 bash scripts/prepare
+  exit 0
+fi
 
-[[ -f scratch/asar/package.json ]] || {
+tar -tzf "$temporary_archive" scratch/asar/package.json >/dev/null 2>&1 || {
   printf 'The downloaded UI archive does not contain scratch/asar/package.json.\n' >&2
   exit 1
 }
+
+rm -rf scratch/asar
+tar -xzf "$temporary_archive"
