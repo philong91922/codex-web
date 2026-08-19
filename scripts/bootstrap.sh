@@ -152,4 +152,4 @@ if [[ "$SKIP_LOGIN" != true ]]; then
 fi
 
 log "Starting codex-web at http://127.0.0.1:$PORT"
-exec bash scripts/run.sh --host 127.0.0.1 --port "$PORT"
+exec bash scripts/launch.sh --host 127.0.0.1 --port "$PORT"

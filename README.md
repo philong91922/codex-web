@@ -61,10 +61,10 @@ skip the interactive login step:
 bash scripts/bootstrap.sh --dir ~/apps/codex-web --port 8214 --no-login
 ```
 
-The script starts the server in the foreground. Stop it with `Ctrl+C` and start
-it again later with `cd ~/codex-web && bash scripts/run.sh`. On Windows it also
-creates a `Codex Web` shortcut on the current user's Desktop; double-click it to
-start the server and open the browser once it is ready.
+The script starts the server in the foreground and opens the browser once it is
+ready. Stop it with `Ctrl+C` and start it again later with
+`cd ~/codex-web && bash scripts/launch.sh`. On Windows it also creates a `Codex
+Web` shortcut on the current user's Desktop with the same behavior.
 
 If the server reports that it cannot locate `better_sqlite3.node` on Windows,
 open Git Bash and run:

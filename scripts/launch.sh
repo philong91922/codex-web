@@ -27,9 +27,17 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+open_browser() {
+  case "$(uname -s)" in
+    Darwin) open "$url" ;;
+    MINGW*|MSYS*|CYGWIN*) cmd.exe /c start "" "$url" ;;
+    *) xdg-open "$url" >/dev/null 2>&1 ;;
+  esac
+}
+
 for ((attempt = 0; attempt < 60; attempt++)); do
   if curl --silent --fail --output /dev/null "$url"; then
-    cmd.exe /c start "" "$url"
+    open_browser
     break
   fi
   sleep 1
