@@ -73,6 +73,13 @@ open Git Bash and run:
 cd ~/codex-web && npm rebuild better-sqlite3 --no-audit --no-fund
 ```
 
+If it reports `spawn .../.bin/codex ENOENT`, update the installation so it uses
+the native Windows `codex.exe` binary:
+
+```bash
+cd ~/codex-web && git pull --ff-only && bash scripts/bootstrap.sh --no-login
+```
+
 ### sign in
 
 ensure the codex cli on the host machine is signed in before starting the
