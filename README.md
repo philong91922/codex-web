@@ -66,6 +66,9 @@ ready. Stop it with `Ctrl+C` and start it again later with
 `cd ~/codex-web && bash scripts/launch.sh`. On Windows it also creates a `Codex
 Web` shortcut on the current user's Desktop with the same behavior.
 
+To refresh an existing Windows shortcut after an update, open Git Bash and run
+`cd ~/codex-web && bash scripts/bootstrap.sh --no-login`.
+
 If the browser does not open on Windows, open it manually from Git Bash with:
 
 ```bash
