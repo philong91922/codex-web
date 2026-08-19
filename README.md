@@ -66,6 +66,12 @@ ready. Stop it with `Ctrl+C` and start it again later with
 `cd ~/codex-web && bash scripts/launch.sh`. On Windows it also creates a `Codex
 Web` shortcut on the current user's Desktop with the same behavior.
 
+If the browser does not open on Windows, open it manually from Git Bash with:
+
+```bash
+cmd.exe /c start "" "http://127.0.0.1:8214"
+```
+
 If the server reports that it cannot locate `better_sqlite3.node` on Windows,
 open Git Bash and run:
 

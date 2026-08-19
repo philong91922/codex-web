@@ -30,7 +30,10 @@ trap cleanup EXIT INT TERM
 open_browser() {
   case "$(uname -s)" in
     Darwin) open "$url" ;;
-    MINGW*|MSYS*|CYGWIN*) cmd.exe /c start "" "$url" ;;
+    MINGW*|MSYS*|CYGWIN*)
+      CODEX_WEB_BROWSER_URL="$url" \
+        powershell.exe -NoProfile -NonInteractive -Command 'Start-Process $env:CODEX_WEB_BROWSER_URL'
+      ;;
     *) xdg-open "$url" >/dev/null 2>&1 ;;
   esac
 }
