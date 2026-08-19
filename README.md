@@ -66,6 +66,13 @@ it again later with `cd ~/codex-web && bash scripts/run.sh`. On Windows it also
 creates a `Codex Web` shortcut on the current user's Desktop; double-click it to
 start the server and open the browser once it is ready.
 
+If the server reports that it cannot locate `better_sqlite3.node` on Windows,
+open Git Bash and run:
+
+```bash
+cd ~/codex-web && npm rebuild better-sqlite3 --no-audit --no-fund
+```
+
 ### sign in
 
 ensure the codex cli on the host machine is signed in before starting the

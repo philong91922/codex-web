@@ -130,6 +130,9 @@ CODEX_CLI_PATH="$(command -v codex)"
 log "Installing project dependencies"
 npm ci --ignore-scripts --no-audit --no-fund
 
+log "Installing native SQLite bindings"
+npm rebuild better-sqlite3 --no-audit --no-fund
+
 log "Downloading the prebuilt browser UI"
 bash scripts/fetch_prebuilt_ui.sh
 
