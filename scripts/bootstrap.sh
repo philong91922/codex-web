@@ -42,7 +42,7 @@ create_windows_shortcut() {
 
   log "Creating Windows Desktop shortcut"
   CODEX_WEB_SHORTCUT_TARGET="$git_bash_path" \
-    CODEX_WEB_SHORTCUT_ARGUMENTS='-lc "./scripts/run.sh"' \
+    CODEX_WEB_SHORTCUT_ARGUMENTS="-lc \"./scripts/launch.sh --host 127.0.0.1 --port $PORT\"" \
     CODEX_WEB_SHORTCUT_WORKDIR="$(cygpath -w "$INSTALL_DIR")" \
     powershell.exe -NoProfile -NonInteractive -Command '
       $desktop = [Environment]::GetFolderPath("Desktop")
@@ -137,7 +137,7 @@ log "Building codex-web"
 npm run build:browser
 npm run build:server
 
-chmod +x scripts/run.sh
+chmod +x scripts/launch.sh scripts/run.sh
 
 if [[ "$PLATFORM" == "windows" ]]; then
   create_windows_shortcut

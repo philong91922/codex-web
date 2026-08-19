@@ -64,7 +64,7 @@ bash scripts/bootstrap.sh --dir ~/apps/codex-web --port 8214 --no-login
 The script starts the server in the foreground. Stop it with `Ctrl+C` and start
 it again later with `cd ~/codex-web && bash scripts/run.sh`. On Windows it also
 creates a `Codex Web` shortcut on the current user's Desktop; double-click it to
-open Git Bash and start the server.
+start the server and open the browser once it is ready.
 
 ### sign in
 
